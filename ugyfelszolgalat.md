@@ -697,14 +697,3 @@ protected $policies = [
 
 ---
 
-## 11. Összefoglalás
-
-A **20feladatBearer** projekt:
-
-- bemutatja egy tipikus ügyfélszolgálati jegykezelő rendszer REST API megvalósítását,
-- Laravel alapú, Bearer tokenes autentikációval,
-- tiszta adatmodellt használ (`users`, `tickets`, `ticket_replies`),
-- jól elkülönített felelősségeket valósít meg (AuthController, TicketController, TicketReplyController, Policy-k),
-- alkalmas további fejlesztésre (pl. fájlcsatolmányok, kategóriák, SLA kezelése, értesítések stb.).
-
-A fenti dokumentáció önmagában is elég ahhoz, hogy egy másik fejlesztő a kód megnyitása előtt is átlássa a rendszer működését és az API hívások menetét.
