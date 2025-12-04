@@ -2,12 +2,6 @@
 
 ## 1. Cél és áttekintés
 
-A **20feladatBearer** egy egyszerű, Laravel alapú REST API projekt, amely ügyfélszolgálati jegyek kezelésére szolgál.  
-A rendszerben:
-
-- felhasználók (**users**) hozhatnak létre jegyeket (**tickets**),
-- a jegyekhez válaszok (**ticket_replies**) fűzhetők,
-- a hozzáférés **Bearer token** alapú autentikációval történik.
 
 A dokumentáció célja, hogy bemutassa:
 
