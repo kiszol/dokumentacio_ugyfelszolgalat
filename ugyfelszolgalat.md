@@ -1,4 +1,4 @@
-# 20feladatBearer – Ügyfélszolgálati jegykezelő REST API
+# Ügyfélszolgálati jegykezelő REST API
 
 ## 1. Cél és áttekintés
 
