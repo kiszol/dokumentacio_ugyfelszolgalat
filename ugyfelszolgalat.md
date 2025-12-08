@@ -31,7 +31,7 @@
    - Postman  segítségével
 ---
 
-## 1. Adatbázis séma
+## 1. Adatbázis 
 
 A feladatban megadott táblák:
 
