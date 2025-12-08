@@ -2,7 +2,7 @@
 
 ## Lépések
 
-1.
+1. **Telepítés**
   ```bash
    composer install
    npm install   
