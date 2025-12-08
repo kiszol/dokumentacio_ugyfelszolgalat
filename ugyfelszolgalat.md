@@ -198,9 +198,6 @@ class TicketReply extends Model
 A rendszer **Bearer token** alapú autentikációt használ  
 A felhasználó bejelentkezés után kap egy tokent, amelyet a következő HTTP headerben kell küldeni:
 
-```http
-Authorization: Bearer {token}
-```
 
 ### Auth route-ok
 
