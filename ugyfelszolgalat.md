@@ -19,7 +19,7 @@
    ```
 3. **Migrációk futtatása és seederek**
    ```bash
-   php artisan migrate --seed
+   php artisan migrate --seed (Ez egyben le is adatbázist is csinál és fel is tölti)
    ```
 
 4. **Szerver indítása**
