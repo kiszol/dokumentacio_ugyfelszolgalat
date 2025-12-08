@@ -40,18 +40,14 @@ CREATE TABLE users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
-    password VARCHAR(255) NOT NULL,
-    role ENUM('customer', 'agent', 'admin') DEFAULT 'customer',
-    created_at TIMESTAMP NULL,
-    updated_at TIMESTAMP NULL
+    password VARCHAR(255) NOT NULL,L
 );
 
 CREATE TABLE tickets (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT UNSIGNED NOT NULL,
+    user_id INT NOT NULL,
     subject VARCHAR(255) NOT NULL,
     description TEXT NOT NULL,
-    priority ENUM('low', 'medium', 'high') DEFAULT 'medium',
     status ENUM('open', 'in_progress', 'resolved', 'closed') DEFAULT 'open',
     created_at TIMESTAMP NULL,
     updated_at TIMESTAMP NULL,
@@ -61,8 +57,8 @@ CREATE TABLE tickets (
 
 CREATE TABLE ticket_replies (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    ticket_id INT UNSIGNED NOT NULL,
-    user_id INT UNSIGNED NOT NULL,
+    ticket_id INT NOT NULL,
+    user_id INT  NOT NULL,
     message TEXT NOT NULL,
     created_at TIMESTAMP NULL,
     updated_at TIMESTAMP NULL,
@@ -75,7 +71,7 @@ CREATE TABLE ticket_replies (
 
 ### Migrációk
 
-**`database/migrations/xxxx_xx_xx_create_users_table.php`** – csak a lényeges mezők:
+**`database/migrations/xxxx_xx_xx_create_users_table.php`**:
 
 ```php
 Schema::create('users', function (Blueprint $table) {
