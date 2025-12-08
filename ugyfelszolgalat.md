@@ -1,37 +1,13 @@
 # Ügyfélszolgálati jegykezelő REST API
 
-## 1. Cél és áttekintés
 
-
-A dokumentáció célja, hogy bemutassa:
-
-- az adatbázis struktúrát,
-- a főbb Laravel komponenseket (modellek, kontrollerek, route-ok),
-- az elérhető REST végpontokat,
-- példákat a kérésekre és válaszokra.
-
----
-
-## 2. Használt technológiák
-
-- **PHP** >= 8.1  
-- **Laravel** 10+  
-- **MySQL / MariaDB** (vagy bármely támogatott SQL adatbázis)  
-- **Composer** (függőségkezelő)  
-- **Laravel Sanctum / Passport / saját Bearer guard** a token alapú autentikációhoz  
-- Fejlesztéshez: **Postman / Insomnia** vagy más REST kliens
-
-> Megjegyzés: a példák Laravel-alapúak, de a REST API elvek más backend környezetben is ugyanígy alkalmazhatók.
-
----
-
-## 3. Adatbázis séma
+## 1. Adatbázis séma
 
 A feladatban megadott táblák:
 
 ```sql
 CREATE TABLE users (
-    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
     password VARCHAR(255) NOT NULL,
@@ -41,8 +17,8 @@ CREATE TABLE users (
 );
 
 CREATE TABLE tickets (
-    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    user_id BIGINT UNSIGNED NOT NULL,
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT UNSIGNED NOT NULL,
     subject VARCHAR(255) NOT NULL,
     description TEXT NOT NULL,
     priority ENUM('low', 'medium', 'high') DEFAULT 'medium',
@@ -54,9 +30,9 @@ CREATE TABLE tickets (
 );
 
 CREATE TABLE ticket_replies (
-    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    ticket_id BIGINT UNSIGNED NOT NULL,
-    user_id BIGINT UNSIGNED NOT NULL,
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    ticket_id INT UNSIGNED NOT NULL,
+    user_id INT UNSIGNED NOT NULL,
     message TEXT NOT NULL,
     created_at TIMESTAMP NULL,
     updated_at TIMESTAMP NULL,
@@ -67,7 +43,7 @@ CREATE TABLE ticket_replies (
 );
 ```
 
-### 3.1 Laravel migrációk
+### Laravel migrációk
 
 **`database/migrations/xxxx_xx_xx_create_users_table.php`** – csak a lényeges mezők:
 
@@ -110,9 +86,9 @@ Schema::create('ticket_replies', function (Blueprint $table) {
 
 ---
 
-## 4. Modellek és kapcsolatok
+## 2. Modellek és kapcsolatok
 
-### 4.1 `User` modell
+### `User` modell
 
 **`app/Models/User.php`**
 
@@ -155,7 +131,7 @@ class User extends Authenticatable
 }
 ```
 
-### 4.2 `Ticket` modell
+### `Ticket` modell
 
 **`app/Models/Ticket.php`**
 
@@ -186,7 +162,7 @@ class Ticket extends Model
 }
 ```
 
-### 4.3 `TicketReply` modell
+### `TicketReply` modell
 
 **`app/Models/TicketReply.php`**
 
@@ -217,16 +193,16 @@ class TicketReply extends Model
 
 ---
 
-## 5. Autentikáció (Bearer token)
+## 3. Autentikáció (Bearer token)
 
-A rendszer **Bearer token** alapú autentikációt használ (pl. Laravel Sanctum).  
+A rendszer **Bearer token** alapú autentikációt használ  
 A felhasználó bejelentkezés után kap egy tokent, amelyet a következő HTTP headerben kell küldeni:
 
 ```http
 Authorization: Bearer {token}
 ```
 
-### 5.1 Auth route-ok
+### Auth route-ok
 
 **`routes/api.php`** (részlet):
 
@@ -253,7 +229,7 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 ```
 
-### 5.2 `AuthController` (részlet)
+### `AuthController` (részlet)
 
 **`app/Http/Controllers/AuthController.php`**
 
@@ -319,26 +295,9 @@ class AuthController extends Controller
 
 ---
 
-## 6. Ticket API végpontok
+## 4. Ticket API végpontok               
 
-### 6.1 Összefoglaló táblázat
-
-| HTTP metódus | URL                           | Leírás                                  | Auth |
-|--------------|-------------------------------|-----------------------------------------|------|
-| POST         | `/api/register`               | Regisztráció                            | Nem  |
-| POST         | `/api/login`                  | Bejelentkezés, token generálás         | Nem  |
-| POST         | `/api/logout`                 | Kijelentkezés, token törlés            | Igen |
-| GET          | `/api/tickets`                | Jegyek listázása (szűrve is)           | Igen |
-| POST         | `/api/tickets`                | Új jegy létrehozása                    | Igen |
-| GET          | `/api/tickets/{id}`           | Konkrét jegy lekérése                  | Igen |
-| PUT/PATCH    | `/api/tickets/{id}`           | Jegy módosítása                         | Igen |
-| DELETE       | `/api/tickets/{id}`           | Jegy törlése                            | Igen |
-| GET          | `/api/tickets/{id}/replies`   | Jegy válaszainak listázása             | Igen |
-| POST         | `/api/tickets/{id}/replies`   | Új válasz hozzáadása                   | Igen |
-
----
-
-### 6.2 Jegyek listázása
+### Jegyek listázása
 
 **Kérés:**
 
@@ -390,7 +349,7 @@ Támogatott query paraméterek:
 }
 ```
 
-### 6.3 Jegy létrehozása
+### Jegy létrehozása
 
 **Kérés:**
 
@@ -423,7 +382,7 @@ Accept: application/json
 }
 ```
 
-### 6.4 `TicketController` – főbb metódusok
+### `TicketController` – főbb metódusok
 
 **`app/Http/Controllers/TicketController.php`** (rövidítve):
 
@@ -505,9 +464,9 @@ class TicketController extends Controller
 
 ---
 
-## 7. Válaszok kezelése (`TicketReplyController`)
+## 5. Válaszok kezelése (`TicketReplyController`)
 
-### 7.1 Válaszok listázása
+### Válaszok listázása
 
 ```http
 GET /api/tickets/1/replies HTTP/1.1
@@ -531,7 +490,7 @@ Accept: application/json
 ]
 ```
 
-### 7.2 Új válasz létrehozása
+### Új válasz létrehozása
 
 ```http
 POST /api/tickets/1/replies HTTP/1.1
@@ -580,7 +539,7 @@ class TicketReplyController extends Controller
 
 ---
 
-## 8. Jogosultságkezelés (Policy példa)
+## 6. Jogosultságkezelés 
 
 A jegyek módosítása / törlése csak:
 - az adott jegy tulajdonosa, vagy
@@ -620,7 +579,7 @@ protected $policies = [
 
 ---
 
-## 9. Hibakezelés és validáció
+## 7. Hibakezelés és validáció
 
 - Laravel beépített validációja használatban (`$request->validate([...])`).
 - Hibás kérés esetén (422) a válasz például:
@@ -654,46 +613,35 @@ protected $policies = [
 
 ---
 
-## 10. Telepítés és futtatás (lépések)
+## 8. Lépések
 
-1. **Repository klónozása**
-   ```bash
-   git clone https://github.com/felhasznalo/20feladatBearer.git
-   cd 20feladatBearer
-   ```
-
-2. **Függőségek telepítése**
-   ```bash
+1.
+  ```bash
    composer install
-   npm install   # ha szükséges a front-endhez
+   npm install   
    ```
 
-3. **.env fájl létrehozása**
+2. **Adatbázis beállítása**
    ```bash
-   cp .env.example .env
-   ```
-
    - Adatbázis beállítások (DB_DATABASE, DB_USERNAME, DB_PASSWORD)
-   - APP_URL, APP_NAME stb.
-
-4. **Application key generálása**
-   ```bash
-   php artisan key:generate
    ```
 
-5. **Migrációk futtatása és (opcionális) seederek**
+3. **Kódok megírása**
+   ```bash
+   pl. TicketController.php
+   ```
+3. **Migrációk futtatása és seederek**
    ```bash
    php artisan migrate --seed
    ```
 
-6. **Fejlesztői szerver indítása**
+4. **Szerver indítása**
    ```bash
    php artisan serve
    ```
 
-7. **API tesztelése**
-   - Postman / Insomnia segítségével
-   - vagy `curl` parancsokkal
+5. **API tesztelése**
+   - Postman  segítségével
 
 ---
 
