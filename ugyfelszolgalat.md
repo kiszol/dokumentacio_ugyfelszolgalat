@@ -43,7 +43,7 @@ CREATE TABLE ticket_replies (
 );
 ```
 
-### Laravel migrációk
+### Migrációk
 
 **`database/migrations/xxxx_xx_xx_create_users_table.php`** – csak a lényeges mezők:
 
