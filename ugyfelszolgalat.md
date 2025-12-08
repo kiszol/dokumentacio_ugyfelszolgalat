@@ -305,47 +305,6 @@ Authorization: Bearer {token}
 Accept: application/json
 ```
 
-Támogatott query paraméterek:
-
-- `status` – `open`, `in_progress`, `resolved`, `closed`
-- `priority` – `low`, `medium`, `high`
-- `user_id` – adott felhasználó jegyei
-- `page` – lapozás
-
-**Példa válasz:**
-
-```json
-{
-  "data": [
-    {
-      "id": 1,
-      "user_id": 3,
-      "subject": "Nem működik a belépés",
-      "description": "Belépésnél hibát kapok...",
-      "priority": "high",
-      "status": "open",
-      "created_at": "2025-05-01T10:15:00.000000Z",
-      "updated_at": "2025-05-01T10:15:00.000000Z"
-    }
-  ],
-  "links": {
-    "first": "http://example.test/api/tickets?page=1",
-    "last": "http://example.test/api/tickets?page=1",
-    "prev": null,
-    "next": null
-  },
-  "meta": {
-    "current_page": 1,
-    "from": 1,
-    "last_page": 1,
-    "path": "http://example.test/api/tickets",
-    "per_page": 15,
-    "to": 1,
-    "total": 1
-  }
-}
-```
-
 ### Jegy létrehozása
 
 **Kérés:**
@@ -364,24 +323,9 @@ Accept: application/json
 }
 ```
 
-**Válasz (201 Created):**
-
-```json
-{
-  "id": 1,
-  "user_id": 3,
-  "subject": "Nem működik a belépés",
-  "description": "Belépéskor 500-as hibakódot kapok.",
-  "priority": "high",
-  "status": "open",
-  "created_at": "2025-05-01T10:15:00.000000Z",
-  "updated_at": "2025-05-01T10:15:00.000000Z"
-}
-```
-
 ### `TicketController` – főbb metódusok
 
-**`app/Http/Controllers/TicketController.php`** (rövidítve):
+**`app/Http/Controllers/TicketController.php`**
 
 ```php
 namespace App\Http\Controllers;
@@ -472,21 +416,6 @@ Authorization: Bearer {token}
 Accept: application/json
 ```
 
-**Válasz:**
-
-```json
-[
-  {
-    "id": 1,
-    "ticket_id": 1,
-    "user_id": 2,
-    "message": "Megvizsgáljuk a hibát, türelmét kérjük.",
-    "created_at": "2025-05-01T11:00:00.000000Z",
-    "updated_at": "2025-05-01T11:00:00.000000Z"
-  }
-]
-```
-
 ### Új válasz létrehozása
 
 ```http
@@ -501,7 +430,7 @@ Accept: application/json
 }
 ```
 
-**`app/Http/Controllers/TicketReplyController.php`** (részlet):
+**`app/Http/Controllers/TicketReplyController.php`** 
 
 ```php
 namespace App\Http\Controllers;
@@ -538,11 +467,11 @@ class TicketReplyController extends Controller
 
 ## 6. Jogosultságkezelés 
 
-A jegyek módosítása / törlése csak:
+A jegyek módosítása vagy törlése csak:
 - az adott jegy tulajdonosa, vagy
-- **admin / agent** szerepkörű felhasználó számára engedélyezett.
+- **admin** felhasználó számára engedélyezett.
 
-**`app/Policies/TicketPolicy.php`** (részlet):
+**`app/Policies/TicketPolicy.php`**
 
 ```php
 namespace App\Policies;
