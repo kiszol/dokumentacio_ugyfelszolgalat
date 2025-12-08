@@ -1,5 +1,35 @@
 # Ügyfélszolgálati jegykezelő REST API
 
+## 0. Lépések
+
+1.
+  ```bash
+   composer install
+   npm install   
+   ```
+
+2. **Adatbázis beállítása**
+   ```bash
+   - Adatbázis beállítások (DB_DATABASE, DB_USERNAME, DB_PASSWORD)
+   ```
+
+3. **Kódok megírása**
+   ```bash
+   pl. TicketController.php, TicketReply.php
+   ```
+3. **Migrációk futtatása és seederek**
+   ```bash
+   php artisan migrate --seed
+   ```
+
+4. **Szerver indítása**
+   ```bash
+   php artisan serve
+   ```
+
+5. **API tesztelése**
+   - Postman  segítségével
+---
 
 ## 1. Adatbázis séma
 
@@ -539,35 +569,5 @@ protected $policies = [
 
 ---
 
-## 8. Lépések
 
-1.
-  ```bash
-   composer install
-   npm install   
-   ```
-
-2. **Adatbázis beállítása**
-   ```bash
-   - Adatbázis beállítások (DB_DATABASE, DB_USERNAME, DB_PASSWORD)
-   ```
-
-3. **Kódok megírása**
-   ```bash
-   pl. TicketController.php
-   ```
-3. **Migrációk futtatása és seederek**
-   ```bash
-   php artisan migrate --seed
-   ```
-
-4. **Szerver indítása**
-   ```bash
-   php artisan serve
-   ```
-
-5. **API tesztelése**
-   - Postman  segítségével
-
----
 
