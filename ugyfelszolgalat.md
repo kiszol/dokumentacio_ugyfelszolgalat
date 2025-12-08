@@ -1,6 +1,6 @@
 # Ügyfélszolgálati jegykezelő REST API
 
-## 0. Lépések
+## Lépések
 
 1.
   ```bash
