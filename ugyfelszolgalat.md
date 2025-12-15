@@ -1,172 +1,140 @@
-Ügyfélszolgálati jegykezelő REST API – Fejlesztői kézikönyv
-1. Bevezetés
-Az ügyfélszolgálati jegykezelő rendszer célja, hogy strukturált módon kezelje a felhasználói problémákat és kérdéseket. A REST API lehetővé teszi jegyek létrehozását, listázását, módosítását és törlését, valamint válaszok kezelését. A rendszer Laravel + Sanctum alapokon épül.
+Ügyfélszolgálati jegykezelő REST API
 
-2. Architektúra áttekintés
-Felhasználók (users): jegyek tulajdonosai és válaszadók. Szerepkörök: user, admin.
+Laravel + Sanctum alapú ügyfélszolgálati jegykezelő rendszer REST API megvalósítással.
+A rendszer támogatja a felhasználók regisztrációját, autentikációját, jegyek és jegyválaszok kezelését szerepkör alapú jogosultságkezeléssel.
 
-Jegyek (tickets): problémák, kérdések. Attribútumok: subject, description, priority, status.
+Funkcionalitás
 
-Jegyválaszok (ticket_replies): kommunikációs szálak.
+Token alapú autentikáció (Laravel Sanctum)
 
-3. Adatbázis séma
-text
-users(id, name, email, role, password, created_at, updated_at)
-tickets(id, user_id, subject, description, priority, status, created_at, updated_at)
-ticket_replies(id, ticket_id, user_id, message, created_at)
-Relációk:
+Szerepkörök: user, admin
 
-User–Ticket 1:N
+Jegyek kezelése (CRUD)
 
-Ticket–Reply 1:N
+Jegyekhez tartozó válaszok
 
-User–Reply 1:N
+Jogosultságvezérelt hozzáférés
 
-4. Authentikáció
-Laravel Sanctum biztosítja a token alapú authentikációt.
+Seederek és automatizált tesztek
 
-Regisztráció: új user, role=user.
+Technológiai stack
 
-Login: email+jelszó, token visszaadás.
+PHP 8.1+
 
-Jogosultságok: user saját jegyek, admin minden jegy.
+Laravel 10+
 
-5. Végpontok részletes leírása
-Auth
-POST /register
+Laravel Sanctum
 
-json
-{
-  "name": "Teszt Elek",
-  "email": "teszt@example.com",
-  "password": "Jelszo_2025",
-  "password_confirmation": "Jelszo_2025"
-}
-Sikeres válasz (201):
+MySQL / PostgreSQL
 
-json
-{ "message":"User created successfully", "user":{...} }
-POST /login
+PHPUnit
 
-json
-{
-  "email": "teszt@example.com",
-  "password": "Jelszo_2025"
-}
-Sikeres válasz (200):
+Könyvtárstruktúra (releváns részek)
+├── app/
+│   ├── Models/
+│   │   ├── User.php
+│   │   ├── Ticket.php
+│   │   └── TicketReply.php
+│   ├── Http/
+│   │   ├── Controllers/
+│   │   │   ├── AuthController.php
+│   │   │   ├── TicketController.php
+│   │   │   └── TicketReplyController.php
+│   │   └── Middleware/
+│   └── Policies/
+│       └── TicketPolicy.php
+│
+├── database/
+│   ├── migrations/
+│   ├── seeders/
+│   │   ├── UserSeeder.php
+│   │   ├── TicketSeeder.php
+│   │   └── TicketReplySeeder.php
+│
+├── routes/
+│   └── api.php
+│
+├── tests/
+│   ├── Feature/
+│   │   ├── AuthTest.php
+│   │   ├── TicketTest.php
+│   │   └── TicketReplyTest.php
+│
+├── .env.example
+├── README.md
+└── composer.json
 
-json
-{ "message":"Login successful", "user":{...}, "access":{"token":"..."} }
-POST /logout
+Telepítés és futtatás
+1. Repository klónozása
+git clone https://github.com/felhasznalo/ticketing-api.git
+cd ticketing-api
 
-json
-{ "message":"Logout successful" }
-User
-GET /users/me → Saját profil + statisztika.
+2. Függőségek telepítése
+composer install
 
-PUT /users/me → Profil frissítése.
+3. Környezeti változók
+cp .env.example .env
+php artisan key:generate
 
-Tickets
-GET /tickets → Saját jegyek (user), minden jegy (admin).
 
-POST /tickets
+Állítsd be az adatbázis kapcsolatot a .env fájlban:
 
-json
-{
-  "subject": "Nem működik a bejelentkezés",
-  "description": "A rendszer hibát dob.",
-  "priority": "high"
-}
-GET /tickets/:id → Jegy részletei + válaszok.
+DB_DATABASE=ticketing
+DB_USERNAME=root
+DB_PASSWORD=
 
-PATCH /tickets/:id → User subject/description, admin status/priority.
-
-DELETE /tickets/:id → Jegy törlése.
-
-Ticket replies
-GET /tickets/:id/replies → Válaszok listázása.
-
-POST /tickets/:id/replies
-
-json
-{
-  "message": "Most már működik, köszönöm!"
-}
-6. Hibakódok
-400 Bad Request – hibás formátum
-
-401 Unauthorized – token hiba
-
-403 Forbidden – jogosultság hiba
-
-404 Not Found – erőforrás nem található
-
-422 Unprocessable Entity – validációs hiba
-
-7. Seeding
-UserSeeder
-php
-User::create([
-  'name' => 'Admin',
-  'email' => 'admin@example.com',
-  'password' => Hash::make('Admin123'),
-  'role' => 'admin',
-]);
-User::factory(10)->create();
-TicketSeeder
-php
-Ticket::create([
-  'user_id' => $user->id,
-  'subject' => 'Teszt jegy',
-  'description' => 'Leírás',
-  'priority' => 'medium',
-  'status' => 'open',
-]);
-TicketReplySeeder
-php
-TicketReply::create([
-  'ticket_id' => $ticket->id,
-  'user_id' => $admin->id,
-  'message' => 'Admin válasz',
-]);
-DatabaseSeeder
-php
-$this->call([
-  UserSeeder::class,
-  TicketSeeder::class,
-  TicketReplySeeder::class,
-]);
-Futtatás:
-
-bash
+4. Adatbázis migráció és seedelés
 php artisan migrate:fresh --seed
-8. Tesztelés
-AuthTest
-php
-$response = $this->postJson('/api/register', [
-  'name' => 'Teszt Elek',
-  'email' => 'teszt@example.com',
-  'password' => 'Jelszo_2025',
-  'password_confirmation' => 'Jelszo_2025',
-]);
-$response->assertStatus(201)->assertJsonStructure(['message','user']);
-TicketTest
-php
-$response = $this->postJson('/api/tickets', [
-  'subject' => 'Teszt jegy',
-  'description' => 'Leírás',
-  'priority' => 'high',
-], ['Authorization' => 'Bearer '.$token]);
 
-$response->assertStatus(201)->assertJsonStructure(['message','ticket']);
-TicketReplyTest
-php
-$response = $this->postJson("/api/tickets/{$ticket->id}/replies", [
-  'message' => 'Ez egy válasz.',
-], ['Authorization' => 'Bearer '.$token]);
+5. Szerver indítása
+php artisan serve
 
-$response->assertStatus(201)->assertJsonStructure(['message','reply']);
-Futtatás:
+Authentikáció
 
-bash
+A rendszer Laravel Sanctumot használ.
+Minden védett végpont Authorization: Bearer <token> fejlécet vár.
+
+API végpontok összefoglaló
+Auth
+Metódus	Végpont	Leírás
+POST	/api/register	Regisztráció
+POST	/api/login	Bejelentkezés
+POST	/api/logout	Kijelentkezés
+User
+Metódus	Végpont	Leírás
+GET	/api/users/me	Saját profil
+Tickets
+Metódus	Végpont	Jogosultság
+GET	/api/tickets	user / admin
+POST	/api/tickets	user
+GET	/api/tickets/{id}	user / admin
+PATCH	/api/tickets/{id}	user / admin
+DELETE	/api/tickets/{id}	admin
+Ticket replies
+Metódus	Végpont
+GET	/api/tickets/{id}/replies
+POST	/api/tickets/{id}/replies
+Hibakezelés
+HTTP kód	Jelentés
+400	Hibás kérés
+401	Nem autentikált
+403	Jogosultság megtagadva
+404	Nem található
+422	Validációs hiba
+Tesztelés
 php artisan test
+
+
+A tesztek lefedik:
+
+Regisztráció
+
+Bejelentkezés
+
+Jegy létrehozás
+
+Jegyválasz létrehozás
+
+Admin felhasználó (seed)
+Email: admin@example.com
+Jelszó: Admin123
