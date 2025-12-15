@@ -1,569 +1,430 @@
-# Ügyfélszolgálati jegykezelő REST API
+Ügyfélszolgálati jegykezelő REST API megvalósítása Laravel környezetben
+base_url: http://127.0.0.1/supportTicketBearer/public/api vagy http://127.0.0.1:8000/api
 
-## Lépések
+Az API nyilvános elérésre tervezett backend, ami ügyfélszolgálati jegyek kezelését biztosítja: felhasználók jegyet hozhatnak létre, megtekinthetik és válaszolhatnak rá, adminok pedig priorizálhatják és kezelhetik a státuszokat. A tartalom- és hibakezelési minták, valamint a bearer tokenes authentikáció (Sanctum) a hivatkozott mintát követik, a fejlesztői dokumentáció felépítése és stílusa is arra rímel.
 
-1. **Telepítés**
-  ```bash
-   composer install
-   npm install   
-   ```
+Funkciók:
 
-2. **Adatbázis beállítása**
-   ```bash
-   - Adatbázis beállítások (DB_DATABASE, DB_USERNAME, DB_PASSWORD)
-   ```
+Auth: regisztráció, bejelentkezés, bearer token kezelés.
 
-3. **Kódok megírása**
-   ```bash
-   pl. TicketController.php, TicketReply.php
-   ```
-3. **Migrációk futtatása és seederek**
-   ```bash
-   php artisan migrate --seed (Ez egyben adatbázist is csinál és fel is tölti azt)
-   ```
+Jegykezelés: jegy létrehozása, listázása, megtekintése, módosítása, törlése.
 
-4. **Szerver indítása**
-   ```bash
-   php artisan serve
-   ```
+Válaszok: jegyválaszok létrehozása és listázása.
 
-5. **API tesztelése**
-   - Postman  segítségével
----
+Admin műveletek: jegy státusz és prioritás módosítása, jegyek összesített listázása.
 
-## 1. Adatbázis 
+Kötelező headerek:
 
-A feladatban megadott táblák:
-
-```sql
-CREATE TABLE users (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    email VARCHAR(255) UNIQUE NOT NULL,
-    password VARCHAR(255) NOT NULL,L
-);
-
-CREATE TABLE tickets (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
-    subject VARCHAR(255) NOT NULL,
-    description TEXT NOT NULL,
-    status ENUM('open', 'in_progress', 'resolved', 'closed') DEFAULT 'open',
-    created_at TIMESTAMP NULL,
-    updated_at TIMESTAMP NULL,
-    CONSTRAINT fk_tickets_user FOREIGN KEY (user_id)
-        REFERENCES users(id) ON DELETE CASCADE
-);
-
-CREATE TABLE ticket_replies (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    ticket_id INT NOT NULL,
-    user_id INT  NOT NULL,
-    message TEXT NOT NULL,
-    created_at TIMESTAMP NULL,
-    updated_at TIMESTAMP NULL,
-    CONSTRAINT fk_replies_ticket FOREIGN KEY (ticket_id)
-        REFERENCES tickets(id) ON DELETE CASCADE,
-    CONSTRAINT fk_replies_user FOREIGN KEY (user_id)
-        REFERENCES users(id) ON DELETE CASCADE
-);
-```
-
-### Migrációk
-
-**`database/migrations/xxxx_xx_xx_create_users_table.php`**:
-
-```php
-Schema::create('users', function (Blueprint $table) {
-    $table->id();
-    $table->string('name');
-    $table->string('email')->unique();
-    $table->string('password');
-    $table->enum('role', ['customer', 'agent', 'admin'])->default('customer');
-    $table->timestamps();
-});
-```
-
-**`create_tickets_table.php`**:
-
-```php
-Schema::create('tickets', function (Blueprint $table) {
-    $table->id();
-    $table->foreignId('user_id')->constrained()->onDelete('cascade');
-    $table->string('subject');
-    $table->text('description');
-    $table->enum('priority', ['low', 'medium', 'high'])->default('medium');
-    $table->enum('status', ['open', 'in_progress', 'resolved', 'closed'])->default('open');
-    $table->timestamps();
-});
-```
-
-**`create_ticket_replies_table.php`**:
-
-```php
-Schema::create('ticket_replies', function (Blueprint $table) {
-    $table->id();
-    $table->foreignId('ticket_id')->constrained()->onDelete('cascade');
-    $table->foreignId('user_id')->constrained()->onDelete('cascade');
-    $table->text('message');
-    $table->timestamps();
-});
-```
-
----
-
-## 2. Modellek és kapcsolatok
-
-### `User` modell
-
-**`app/Models/User.php`**
-
-```php
-namespace App\Models;
-
-use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
-use Laravel\Sanctum\HasApiTokens;
-
-class User extends Authenticatable
-{
-    use HasApiTokens, Notifiable;
-
-    protected $fillable = [
-        'name',
-        'email',
-        'password',
-        'role',
-    ];
-
-    protected $hidden = [
-        'password',
-        'remember_token',
-    ];
-
-    protected $casts = [
-        'email_verified_at' => 'datetime',
-    ];
-
-    public function tickets()
-    {
-        return $this->hasMany(Ticket::class);
-    }
-
-    public function ticketReplies()
-    {
-        return $this->hasMany(TicketReply::class);
-    }
-}
-```
-
-### `Ticket` modell
-
-**`app/Models/Ticket.php`**
-
-```php
-namespace App\Models;
-
-use Illuminate\Database\Eloquent\Model;
-
-class Ticket extends Model
-{
-    protected $fillable = [
-        'user_id',
-        'subject',
-        'description',
-        'priority',
-        'status',
-    ];
-
-    public function user()
-    {
-        return $this->belongsTo(User::class);
-    }
-
-    public function replies()
-    {
-        return $this->hasMany(TicketReply::class);
-    }
-}
-```
-
-### `TicketReply` modell
-
-**`app/Models/TicketReply.php`**
-
-```php
-namespace App\Models;
-
-use Illuminate\Database\Eloquent\Model;
-
-class TicketReply extends Model
-{
-    protected $fillable = [
-        'ticket_id',
-        'user_id',
-        'message',
-    ];
-
-    public function ticket()
-    {
-        return $this->belongsTo(Ticket::class);
-    }
-
-    public function user()
-    {
-        return $this->belongsTo(User::class);
-    }
-}
-```
-
----
-
-## 3. Autentikáció (Bearer token)
-
-A rendszer **Bearer token** alapú autentikációt használ  
-A felhasználó bejelentkezés után kap egy tokent, amelyet a következő HTTP headerben kell küldeni:
-
-
-### Auth route-ok
-
-**`routes/api.php`** (részlet):
-
-```php
-use App\Http\Controllers\AuthController;
-use App\Http\Controllers\TicketController;
-use App\Http\Controllers\TicketReplyController;
-use Illuminate\Support\Facades\Route;
-
-Route::post('/register', [AuthController::class, 'register']);
-Route::post('/login', [AuthController::class, 'login']);
-
-Route::middleware('auth:sanctum')->group(function () {
-    Route::post('/logout', [AuthController::class, 'logout']);
-
-    Route::get('/tickets', [TicketController::class, 'index']);
-    Route::post('/tickets', [TicketController::class, 'store']);
-    Route::get('/tickets/{ticket}', [TicketController::class, 'show']);
-    Route::put('/tickets/{ticket}', [TicketController::class, 'update']);
-    Route::delete('/tickets/{ticket}', [TicketController::class, 'destroy']);
-
-    Route::get('/tickets/{ticket}/replies', [TicketReplyController::class, 'index']);
-    Route::post('/tickets/{ticket}/replies', [TicketReplyController::class, 'store']);
-});
-```
-
-### `AuthController` (részlet)
-
-**`app/Http/Controllers/AuthController.php`**
-
-```php
-namespace App\Http\Controllers;
-
-use App\Models\User;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\ValidationException;
-
-class AuthController extends Controller
-{
-    public function register(Request $request)
-    {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
-            'password' => 'required|min:6|confirmed',
-        ]);
-
-        $user = User::create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
-        ]);
-
-        return response()->json($user, 201);
-    }
-
-    public function login(Request $request)
-    {
-        $credentials = $request->validate([
-            'email' => 'required|email',
-            'password' => 'required',
-        ]);
-
-        $user = User::where('email', $credentials['email'])->first();
-
-        if (! $user || ! Hash::check($credentials['password'], $user->password)) {
-            throw ValidationException::withMessages([
-                'email' => ['The provided credentials are incorrect.'],
-            ]);
-        }
-
-        $token = $user->createToken('api-token')->plainTextToken;
-
-        return response()->json([
-            'token' => $token,
-            'token_type' => 'Bearer',
-            'user' => $user,
-        ]);
-    }
-
-    public function logout(Request $request)
-    {
-        $request->user()->currentAccessToken()->delete();
-
-        return response()->json(['message' => 'Logged out']);
-    }
-}
-```
-
----
-
-## 4. Ticket API végpontok               
-
-### Jegyek listázása
-
-**Kérés:**
-
-```http
-GET /api/tickets?status=open&priority=high&page=1 HTTP/1.1
-Host: example.test
-Authorization: Bearer {token}
-Accept: application/json
-```
-
-### Jegy létrehozása
-
-**Kérés:**
-
-```http
-POST /api/tickets HTTP/1.1
-Host: example.test
-Authorization: Bearer {token}
 Content-Type: application/json
+
 Accept: application/json
 
-{
-  "subject": "Nem működik a belépés",
-  "description": "Belépéskor 500-as hibakódot kapok.",
-  "priority": "high"
-}
-```
+Végpontok
+Érvénytelen vagy hiányzó token esetén a backendnek 401 Unauthorized választ kell adnia. Response: 401 Unauthorized { "message": "Invalid token" }
 
-### `TicketController` – főbb metódusok
+Nem védett végpontok
+GET: /ping
 
-**`app/Http/Controllers/TicketController.php`**
+Leírás: Egyszerű elérhetőségi teszt.
 
-```php
-namespace App\Http\Controllers;
+Válaszok: 200 OK, { "message": "API works!" }
 
-use App\Models\Ticket;
-use Illuminate\Http\Request;
+POST: /register
 
-class TicketController extends Controller
-{
-    public function index(Request $request)
-    {
-        $query = Ticket::query()->with('user');
+Leírás: Új felhasználó regisztrációja (alapértelmezett role: "user").
 
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
+Törzs:
 
-        if ($request->filled('priority')) {
-            $query->where('priority', $request->priority);
-        }
+name (string, required)
 
-        if ($request->filled('user_id')) {
-            $query->where('user_id', $request->user_id);
-        }
+email (string, required, unique)
 
-        return $query->paginate(15);
-    }
+password (string, required, min:8)
 
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'subject' => 'required|string|max:255',
-            'description' => 'required|string',
-            'priority' => 'nullable|in:low,medium,high',
-        ]);
+password_confirmation (string, required, egyezzen)
 
-        $validated['user_id'] = $request->user()->id;
+Siker: 201 Created { "message": "User created successfully", "user": { "id": 13, "name": "Név", "email": "valami@example.com", "role": "user" } }
 
-        $ticket = Ticket::create($validated);
+Hiba: 422 Unprocessable Entity, mezőhiba részletekkel
 
-        return response()->json($ticket, 201);
-    }
+POST: /login
 
-    public function show(Ticket $ticket)
-    {
-        $ticket->load(['user', 'replies.user']);
+Leírás: Bejelentkezés email + jelszó.
 
-        return $ticket;
-    }
+Törzs: { "email": "valami@example.com", "password": "Jelszo_2025" }
 
-    public function update(Request $request, Ticket $ticket)
-    {
-        $this->authorize('update', $ticket);
+Siker: 200 OK + bearer token { "message": "Login successful", "user": { ... }, "access": { "token": "<token>", "token_type": "Bearer" } }
 
-        $validated = $request->validate([
-            'subject' => 'sometimes|string|max:255',
-            'description' => 'sometimes|string',
-            'priority' => 'sometimes|in:low,medium,high',
-            'status' => 'sometimes|in:open,in_progress,resolved,closed',
-        ]);
+Hiba: 401 Unauthorized, { "message": "Invalid email or password" }
 
-        $ticket->update($validated);
+Authorization header minta minden további autentikált végpontra: Authorization: "Bearer <token>"
 
-        return $ticket;
-    }
+Hibák
+400 Bad Request: hibás formátum vagy hiányzó mezők.
 
-    public function destroy(Ticket $ticket)
-    {
-        $this->authorize('delete', $ticket);
+401 Unauthorized: hiányzó/érvénytelen token.
 
-        $ticket->delete();
+403 Forbidden: nincs jogosultság (pl. user próbál admin-only műveletet).
 
-        return response()->json(null, 204);
-    }
-}
-```
+404 Not Found: erőforrás nem található (jegy, válasz).
 
----
+409 Conflict: ütközés (pl. már létező állapot).
 
-## 5. Válaszok kezelése (`TicketReplyController`)
+422 Unprocessable Entity: validációs hibák.
 
-### Válaszok listázása
+503 Service Unavailable: nem elérhető szolgáltatás / váratlan hiba.
 
-```http
-GET /api/tickets/1/replies HTTP/1.1
-Host: example.test
-Authorization: Bearer {token}
-Accept: application/json
-```
+Jegykezelés
+Authentikált végpontok (auth:sanctum)
+GET: /users/me
 
-### Új válasz létrehozása
+Leírás: Saját profil és jegy-statisztikák.
 
-```http
-POST /api/tickets/1/replies HTTP/1.1
-Host: example.test
-Authorization: Bearer {token}
-Content-Type: application/json
-Accept: application/json
+Válasz: 200 OK { "user": { id, name, email, role }, "stats": { "ticketsOpened": X, "ticketsClosed": Y } }
 
-{
-  "message": "A hiba javítva lett, próbálja meg újra a belépést."
-}
-```
+PUT: /users/me
 
-**`app/Http/Controllers/TicketReplyController.php`** 
+Leírás: Saját profil frissítése (name, email, password+confirmation).
 
-```php
-namespace App\Http\Controllers;
+Siker: 200 OK, { "message": "Profile updated successfully", "user": { ... } }
 
-use App\Models\Ticket;
-use App\Models\TicketReply;
-use Illuminate\Http\Request;
+Hiba: 422 (validáció), 401 (token)
 
-class TicketReplyController extends Controller
-{
-    public function index(Ticket $ticket)
-    {
-        return $ticket->replies()->with('user')->get();
-    }
+POST: /logout
 
-    public function store(Request $request, Ticket $ticket)
-    {
-        $validated = $request->validate([
-            'message' => 'required|string',
-        ]);
+Leírás: Aktuális felhasználó kijelentkeztetése (token törlése).
 
-        $reply = TicketReply::create([
-            'ticket_id' => $ticket->id,
-            'user_id' => $request->user()->id,
-            'message' => $validated['message'],
-        ]);
+Siker: 200 OK, { "message": "Logout successful" }
 
-        return response()->json($reply, 201);
-    }
-}
-```
+Tickets
+GET: /tickets
 
----
+Leírás: Jegyek listázása.
 
-## 6. Jogosultságkezelés 
+User: csak saját jegyek.
 
-A jegyek módosítása vagy törlése csak:
-- az adott jegy tulajdonosa, vagy
-- **admin** felhasználó számára engedélyezett.
+Admin: minden jegy.
 
-**`app/Policies/TicketPolicy.php`**
+Query opciók: status, priority, user_id (admin), search (subject).
 
-```php
-namespace App\Policies;
+Siker: 200 OK, { "data": [ { id, subject, priority, status, created_at, user: { id, name } } ... ] }
 
-use App\Models\Ticket;
-use App\Models\User;
+POST: /tickets
 
-class TicketPolicy
-{
-    public function update(User $user, Ticket $ticket)
-    {
-        return $user->id === $ticket->user_id
-            || in_array($user->role, ['admin', 'agent']);
-    }
+Leírás: Új jegy létrehozása.
 
-    public function delete(User $user, Ticket $ticket)
-    {
-        return $user->id === $ticket->user_id
-            || in_array($user->role, ['admin', 'agent']);
-    }
-}
-```
+Törzs:
 
-**`AuthServiceProvider.php`** regisztráció:
+subject (string, required, max:255)
 
-```php
-protected $policies = [
-    \App\Models\Ticket::class => \App\Policies\TicketPolicy::class,
-];
-```
+description (string, required)
 
----
+priority (enum: low|medium|high, default: medium)
 
-## 7. Hibakezelés és validáció
+Siker: 201 Created, { "message": "Ticket created", "ticket": { id, ... } }
 
-- Laravel beépített validációja használatban (`$request->validate([...])`).
-- Hibás kérés esetén (422) a válasz például:
+Hiba: 422 Unprocessable Entity
 
-```json
-{
-  "message": "The given data was invalid.",
-  "errors": {
-    "subject": [
-      "The subject field is required."
-    ]
-  }
-}
-```
+GET: /tickets/:id
 
-- Jogosultság hiánya esetén (403):
+Leírás: Jegy részletei, válaszokkal.
 
-```json
-{
-  "message": "This action is unauthorized."
-}
-```
+User: csak a saját jegyét.
 
-- Nem létező erőforrás esetén (404):
+Admin: bármely jegy.
 
-```json
-{
-  "message": "No query results for model [App\\Models\\Ticket] 999"
-}
-```
+Siker: 200 OK { "ticket": { id, user_id, subject, description, priority, status }, "replies": [ { id, user_id, message, created_at } ... ] }
 
----
+Hiba: 404 Not Found
 
+PATCH: /tickets/:id
 
+Leírás: Jegy módosítása.
 
+User: subject, description módosítás ha status != closed.
+
+Admin: status (open|pending|resolved|closed), priority módosítás.
+
+Siker: 200 OK, { "message": "Ticket updated", "ticket": { ... } }
+
+Hiba: 403 Forbidden (nem saját, vagy closed), 422 Unprocessable Entity
+
+DELETE: /tickets/:id
+
+Leírás: Jegy törlése.
+
+User: saját jegy törlése, ha status != closed.
+
+Admin: bármely jegy törlése (soft delete ajánlott).
+
+Siker: 200 OK, { "message": "Ticket deleted successfully" }
+
+Hiba: 404 Not Found, 403 Forbidden
+
+Ticket replies
+GET: /tickets/:id/replies
+
+Leírás: Jegy válaszainak listája.
+
+Siker: 200 OK, { "data": [ { id, user_id, message, created_at, user: { id, name, role } } ... ] }
+
+Hiba: 404 Not Found
+
+POST: /tickets/:id/replies
+
+Leírás: Válasz hozzáadása egy jegyhez.
+
+Törzs:
+
+message (string, required)
+
+Siker: 201 Created, { "message": "Reply added", "reply": { id, ... } }
+
+Hiba: 403 Forbidden (hozzáférés), 422 Unprocessable Entity
+
+Összefoglaló végpont táblázat
+HTTP	Útvonal	Jogosultság	Státuszkódok	Rövid leírás
+GET	/ping	Nyilvános	200 OK	API teszteléshez
+POST	/register	Nyilvános	201, 422	Regisztráció
+POST	/login	Nyilvános	200, 401	Bejelentkezés
+POST	/logout	Hitelesített	200, 401	Kijelentkezés
+GET	/users/me	Hitelesített	200, 401	Saját profil, statisztikák
+PUT	/users/me	Hitelesített	200, 422, 401	Profil módosítása
+GET	/tickets	Hitelesített	200, 401	Jegyek listázása
+POST	/tickets	Hitelesített	201, 422, 401	Jegy létrehozása
+GET	/tickets/:id	Hitelesített	200, 404, 403, 401	Jegy részletek
+PATCH	/tickets/:id	Hitelesített	200, 403, 422, 401	Jegy módosítása
+DELETE	/tickets/:id	Hitelesített	200, 404, 403, 401	Jegy törlése
+GET	/tickets/:id/replies	Hitelesített	200, 404, 403, 401	Válaszok listája
+POST	/tickets/:id/replies	Hitelesített	201, 422, 403, 401	Válasz hozzáadása
+Sources:
+
+Adatbázis terv és sémák
+Kód
++--------------------+       +--------------------+       +--------------------+
+| users              |       | tickets            |       | ticket_replies     |
++--------------------+       +--------------------+       +--------------------+
+| id (PK)            |   1--<| user_id (FK)       |   1--<| ticket_id (FK)     |
+| name               |       | subject            |       | user_id (FK)       |
+| email (unique)     |       | description (text) |       | message (text)     |
+| role (user/admin)  |       | priority (enum)    |       | created_at         |
+| password           |       | status (enum)      |       +--------------------+
+| created_at         |       | created_at         |
+| updated_at         |       | updated_at         |
+| deleted_at (soft?) |       +--------------------+
++--------------------+
+Migrációk
+users
+
+id, name, email(unique), password, role(enum: user|admin), softDeletes(), timestamps()
+
+tickets
+
+id, user_id(foreign, cascade), subject(string), description(text), priority(enum: low|medium|high), status(enum: open|pending|resolved|closed), timestamps()
+
+ticket_replies
+
+id, ticket_id(foreign, cascade), user_id(foreign, cascade), message(text), created_at(timestamp, useCurrent)
+
+Telepítés és konfiguráció
+Projekt létrehozása:
+
+Parancs: composer create-project laravel/laravel --prefer-dist supportTicketBearer
+
+.env beállítás:
+
+DB_CONNECTION: mysql
+
+DB_HOST: 127.0.0.1
+
+DB_PORT: 3306
+
+DB_DATABASE: support_ticket
+
+DB_USERNAME: root
+
+DB_PASSWORD: (megfelelő érték)
+
+Időzóna:
+
+config/app.php: 'timezone' => 'Europe/Budapest'
+
+Sanctum telepítése és API inicializálás:
+
+Parancsok:
+
+composer require laravel/sanctum
+
+php artisan vendor:publish --provider="Laravel\Sanctum\SanctumServiceProvider"
+
+php artisan install:api
+
+Tesztútvonal:
+
+routes/api.php: GET /ping -> { "message": "API works!" }
+
+Futtatás:
+
+Parancs: php artisan serve
+
+POSTMAN teszt: GET http://127.0.0.1:8000/api/ping
+
+Modellek, kontrollerek és útvonalak
+Modellek
+User
+
+Fillable: name, email, password, role
+
+Hidden: password, remember_token
+
+Relációk: hasMany(Ticket), hasMany(TicketReply)
+
+Segéd: isAdmin(): bool
+
+Ticket
+
+Fillable: user_id, subject, description, priority, status
+
+Relációk: belongsTo(User), hasMany(TicketReply)
+
+TicketReply
+
+Timestamps: csak created_at (updated_at nem szükséges)
+
+Fillable: ticket_id, user_id, message
+
+Relációk: belongsTo(Ticket), belongsTo(User)
+
+AuthController
+register(Request): validáció, user létrehozás, 201 válasz
+
+login(Request): email+jelszó ellenőrzés, token létrehozás, 200 válasz
+
+logout(Request): user->tokens()->delete(), 200 válasz
+
+UserController
+me(Request): user és jegy statisztika (opened/closed)
+
+updateMe(Request): name/email unique kivétellel, password+confirmation, 200 válasz
+
+TicketController
+index(Request):
+
+User: saját jegyek szűrése
+
+Admin: minden jegy, opcionális query szűrés
+
+store(Request): subject/description/priority validáció, 201 válasz
+
+show(Request, $id): hozzáférés ellenőrzés (saját vagy admin), válaszok betöltése
+
+update(Request, $id):
+
+User: subject, description módosítása, ha status != closed
+
+Admin: status, priority módosítása
+
+destroy(Request, $id):
+
+User: saját jegy törlése, ha status != closed
+
+Admin: soft delete bármely jegy
+
+TicketReplyController
+index(Request, $ticketId): jegyhez tartozó válaszok listázása (hozzáférés ellenőrzés)
+
+store(Request, $ticketId): message validáció, 201 válasz
+
+Útvonalak (routes/api.php)
+Public:
+
+GET: /ping
+
+POST: /register
+
+POST: /login
+
+Authenticated (auth:sanctum):
+
+POST: /logout
+
+GET: /users/me
+
+PUT: /users/me
+
+GET: /tickets
+
+POST: /tickets
+
+GET: /tickets/{id}
+
+PATCH: /tickets/{id}
+
+DELETE: /tickets/{id}
+
+GET: /tickets/{id}/replies
+
+POST: /tickets/{id}/replies
+
+Seeding és tesztelés
+Seeding
+UserSeeder:
+
+1 admin: admin@example.com, jelszó: admin, role: admin
+
+9 user: Faker hu_HU nevekkel, jelszó: Jelszo123, role: user
+
+TicketSeeder:
+
+3 releváns jegy: különböző subject/priority/status kombinációkkal, felhasználókhoz rendelve.
+
+TicketReplySeeder:
+
+Válaszok: minden jegyhez 1–2 reply, vegyesen admin és user által.
+
+DatabaseSeeder:
+
+call: UserSeeder, TicketSeeder, TicketReplySeeder
+
+Feature tesztek (példák)
+AuthTest:
+
+ping returns ok: GET /api/ping -> 200, "API works!"
+
+register creates user: POST /api/register -> 201, user létrejött
+
+login success/failure: POST /api/login -> 200 tokennel / 401 invalid
+
+UserTest:
+
+/users/me requires auth: 401 "Unauthenticated."
+
+/users/me returns profile: 200, helyes struktúra és email
+
+update name/email/password: 200, DB állapot ellenőrzése
+
+TicketTest:
+
+index requires auth: 401 "Unauthenticated."
+
+index returns list: 200, struktúra és elemszám
+
+store creates ticket: 201, DB has ticket
+
+show returns details and replies: 200, nested struktúra
+
+update rules: 200 admin módosítások; 403 user closed esetben; 422 invalid
+
+destroy rules: 200 törlés; 403 tiltott; 404 nem található
+
+TicketReplyTest:
+
+index requires auth: 401
+
+store requires message: 422 ha hiányzik; 201 ha ok
+
+access control: user csak saját jegyhez fér; admin bármihez
+
+Futtatás:
+
+Parancs: php artisan tes
