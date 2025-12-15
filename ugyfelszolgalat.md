@@ -30,7 +30,7 @@ A projekt célja egy egyszerű, átlátható backend megvalósítása jegyek és
 ## Adatmodell
 
 ### Táblák
-
+```bash
 ├── app/
 │   ├── Models/
 │   │   ├── User.php
@@ -64,7 +64,7 @@ A projekt célja egy egyszerű, átlátható backend megvalósítása jegyek és
 ├── .env.example
 ├── README.md
 └── composer.json
-yaml
+```bash
 Kód másolása
 
 ### Kapcsolatok
