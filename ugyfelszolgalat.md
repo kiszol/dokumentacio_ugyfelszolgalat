@@ -1,32 +1,5 @@
 # Ügyfélszolgálati jegykezelő REST API
 
-Laravel + Sanctum alapú REST API ügyfélszolgálati jegykezelő rendszerhez.  
-A projekt célja egy egyszerű, átlátható backend megvalósítása jegyek és válaszok kezelésére, szerepkör alapú jogosultságkezeléssel.
-
----
-
-## Fő funkciók
-
-- Felhasználói regisztráció és bejelentkezés
-- Token alapú autentikáció (Laravel Sanctum)
-- Jegyek létrehozása, listázása, módosítása, törlése
-- Jegyekhez tartozó válaszok kezelése
-- Szerepkörök: `user`, `admin`
-- Automatikus adatbázis seedelés
-- Feature tesztek
-
----
-
-## Technológiai stack
-
-- PHP 8.1+
-- Laravel 10+
-- Laravel Sanctum
-- MySQL / PostgreSQL
-- PHPUnit
-
----
-
 ## Adatmodell
 
 ### Táblák
@@ -65,7 +38,6 @@ A projekt célja egy egyszerű, átlátható backend megvalósítása jegyek és
 ├── README.md
 └── composer.json
 ```
-Kód másolása
 
 ### Kapcsolatok
 
@@ -75,11 +47,7 @@ Kód másolása
 
 ---
 
-## Telepítés
-
-### Repository klónozása
-
-4. Authentikáció
+### Authentikáció
 ```bash
 Laravel Sanctum biztosítja a token alapú authentikációt.
 
@@ -89,7 +57,7 @@ Login: email+jelszó, token visszaadás.
 
 Jogosultságok: user saját jegyek, admin minden jegy.
 ```
-5. Végpontok részletes leírása
+### Postman
 Auth
 POST /register
 ```bash
@@ -156,4 +124,62 @@ json
 {
   "message": "Most már működik, köszönöm!"
 }
+```
+###6. Hibakódok
+
+400 Bad Request – hibás formátum
+
+401 Unauthorized – token hiba
+
+403 Forbidden – jogosultság hiba
+
+404 Not Found – erőforrás nem található
+
+422 Unprocessable Entity – validációs hiba
+
+7. Seeding
+UserSeeder
+```bash
+php
+User::create([
+  'name' => 'Admin',
+  'email' => 'admin@example.com',
+  'password' => Hash::make('Admin123'),
+  'role' => 'admin',
+]);
+User::factory(10)->create();
+```
+TicketSeeder
+```bash
+php
+Ticket::create([
+  'user_id' => $user->id,
+  'subject' => 'Teszt jegy',
+  'description' => 'Leírás',
+  'priority' => 'medium',
+  'status' => 'open',
+]);
+```
+TicketReplySeeder
+```bash
+php
+TicketReply::create([
+  'ticket_id' => $ticket->id,
+  'user_id' => $admin->id,
+  'message' => 'Admin válasz',
+]);
+```
+DatabaseSeeder
+```bash
+php
+$this->call([
+  UserSeeder::class,
+  TicketSeeder::class,
+  TicketReplySeeder::class,
+]);
+```
+Futtatás:
+
+```bash
+php artisan migrate:fresh --seed
 ```
