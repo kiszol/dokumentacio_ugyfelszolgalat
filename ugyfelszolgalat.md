@@ -137,7 +137,7 @@ json
 
 422 Unprocessable Entity – validációs hiba
 
-7. Seeding
+### Seeding
 UserSeeder
 ```bash
 php
@@ -182,4 +182,38 @@ Futtatás:
 
 ```bash
 php artisan migrate:fresh --seed
+```
+### Tesztelés
+AuthTest
+```bash
+php
+$response = $this->postJson('/api/register', [
+  'name' => 'Teszt Elek',
+  'email' => 'teszt@example.com',
+  'password' => 'Jelszo_2025',
+  'password_confirmation' => 'Jelszo_2025',
+]);
+$response->assertStatus(201)->assertJsonStructure(['message','user']);
+```
+TicketTest
+```bash
+$response = $this->postJson('/api/tickets', [
+  'subject' => 'Teszt jegy',
+  'description' => 'Leírás',
+  'priority' => 'high',
+], ['Authorization' => 'Bearer '.$token]);
+
+$response->assertStatus(201)->assertJsonStructure(['message','ticket']);
+```
+TicketReplyTest
+```bash
+$response = $this->postJson("/api/tickets/{$ticket->id}/replies", [
+  'message' => 'Ez egy válasz.',
+], ['Authorization' => 'Bearer '.$token]);
+
+$response->assertStatus(201)->assertJsonStructure(['message','reply']);
+Futtatás:
+```
+```bash
+php artisan test
 ```
