@@ -64,7 +64,7 @@ A projekt célja egy egyszerű, átlátható backend megvalósítása jegyek és
 ├── .env.example
 ├── README.md
 └── composer.json
-```bash
+
 Kód másolása
 
 ### Kapcsolatok
