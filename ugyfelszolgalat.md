@@ -64,7 +64,7 @@ A projekt célja egy egyszerű, átlátható backend megvalósítása jegyek és
 ├── .env.example
 ├── README.md
 └── composer.json
-
+```
 Kód másolása
 
 ### Kapcsolatok
@@ -79,87 +79,81 @@ Kód másolása
 
 ### Repository klónozása
 
+4. Authentikáció
 ```bash
-git clone https://github.com/felhasznalo/ticketing-api.git
-cd ticketing-api
-Függőségek telepítése
-bash
-Kód másolása
-composer install
-Környezeti változók
-bash
-Kód másolása
-cp .env.example .env
-php artisan key:generate
-.env fájlban állítsd be az adatbázist:
+Laravel Sanctum biztosítja a token alapú authentikációt.
 
-env
-Kód másolása
-DB_DATABASE=ticketing
-DB_USERNAME=root
-DB_PASSWORD=
-Migráció és seedelés
-bash
-Kód másolása
-php artisan migrate:fresh --seed
-Szerver indítása
-bash
-Kód másolása
-php artisan serve
-Authentikáció
-A védett végpontok Bearer token alapú hitelesítést használnak.
+Regisztráció: új user, role=user.
 
-css
-Kód másolása
-Authorization: Bearer {token}
-API végpontok
+Login: email+jelszó, token visszaadás.
+
+Jogosultságok: user saját jegyek, admin minden jegy.
+```
+5. Végpontok részletes leírása
 Auth
-Method	Endpoint	Leírás
-POST	/api/register	Regisztráció
-POST	/api/login	Bejelentkezés
-POST	/api/logout	Kijelentkezés
-
+POST /register
+```bash
+json
+{
+  "name": "Teszt Elek",
+  "email": "teszt@example.com",
+  "password": "Jelszo_2025",
+  "password_confirmation": "Jelszo_2025"
+}
+```
+Sikeres válasz (201):
+```bash
+json
+{ "message":"User created successfully", "user":{...} }
+POST /login
+```
+```bash
+json
+{
+  "email": "teszt@example.com",
+  "password": "Jelszo_2025"
+}
+```
+Sikeres válasz (200):
+```bash
+json
+{ "message":"Login successful", "user":{...}, "access":{"token":"..."} }
+POST /logout
+```
+```bash
+json
+{ "message":"Logout successful" }
+```
 User
-Method	Endpoint	Leírás
-GET	/api/users/me	Saját profil
+GET /users/me → Saját profil + statisztika.
+
+PUT /users/me → Profil frissítése.
 
 Tickets
-Method	Endpoint	Jogosultság
-GET	/api/tickets	user, admin
-POST	/api/tickets	user
-GET	/api/tickets/{id}	user, admin
-PATCH	/api/tickets/{id}	user, admin
-DELETE	/api/tickets/{id}	admin
+GET /tickets → Saját jegyek (user), minden jegy (admin).
+
+POST /tickets
+```bash
+json
+{
+  "subject": "Nem működik a bejelentkezés",
+  "description": "A rendszer hibát dob.",
+  "priority": "high"
+}
+```
+GET /tickets/:id → Jegy részletei + válaszok.
+
+PATCH /tickets/:id → User subject/description, admin status/priority.
+
+DELETE /tickets/:id → Jegy törlése.
 
 Ticket replies
-Method	Endpoint
-GET	/api/tickets/{id}/replies
-POST	/api/tickets/{id}/replies
+GET /tickets/:id/replies → Válaszok listázása.
 
-Hibakódok
-Kód	Jelentés
-400	Hibás kérés
-401	Nem autentikált
-403	Jogosultság megtagadva
-404	Nem található
-422	Validációs hiba
-
-Tesztelés
-bash
-Kód másolása
-php artisan test
-A tesztek lefedik:
-
-Regisztráció
-
-Bejelentkezés
-
-Jegy létrehozás
-
-Jegyválasz létrehozás
-
-Alap admin felhasználó (seed)
-makefile
-Kód másolása
-Email: admin@example.com
-Jelszó: Admin123
+POST /tickets/:id/replies
+```bash
+json
+{
+  "message": "Most már működik, köszönöm!"
+}
+```
