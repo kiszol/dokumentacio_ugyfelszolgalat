@@ -31,52 +31,39 @@ A projekt célja egy egyszerű, átlátható backend megvalósítása jegyek és
 
 ### Táblák
 
-users
-
-id
-
-name
-
-email
-
-role
-
-password
-
-created_at
-
-updated_at
-
-tickets
-
-id
-
-user_id
-
-subject
-
-description
-
-priority
-
-status
-
-created_at
-
-updated_at
-
-ticket_replies
-
-id
-
-ticket_id
-
-user_id
-
-message
-
-created_at
-
+├── app/
+│   ├── Models/
+│   │   ├── User.php
+│   │   ├── Ticket.php
+│   │   └── TicketReply.php
+│   ├── Http/
+│   │   ├── Controllers/
+│   │   │   ├── AuthController.php
+│   │   │   ├── TicketController.php
+│   │   │   └── TicketReplyController.php
+│   │   └── Middleware/
+│   └── Policies/
+│       └── TicketPolicy.php
+│
+├── database/
+│   ├── migrations/
+│   ├── seeders/
+│   │   ├── UserSeeder.php
+│   │   ├── TicketSeeder.php
+│   │   └── TicketReplySeeder.php
+│
+├── routes/
+│   └── api.php
+│
+├── tests/
+│   ├── Feature/
+│   │   ├── AuthTest.php
+│   │   ├── TicketTest.php
+│   │   └── TicketReplyTest.php
+│
+├── .env.example
+├── README.md
+└── composer.json
 yaml
 Kód másolása
 
