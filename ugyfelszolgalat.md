@@ -1,130 +1,166 @@
-Ügyfélszolgálati jegykezelő REST API
+# Ügyfélszolgálati jegykezelő REST API
 
-Laravel + Sanctum alapú ügyfélszolgálati jegykezelő rendszer REST API megvalósítással.
-A rendszer támogatja a felhasználók regisztrációját, autentikációját, jegyek és jegyválaszok kezelését szerepkör alapú jogosultságkezeléssel.
+Laravel + Sanctum alapú REST API ügyfélszolgálati jegykezelő rendszerhez.  
+A projekt célja egy egyszerű, átlátható backend megvalósítása jegyek és válaszok kezelésére, szerepkör alapú jogosultságkezeléssel.
 
-Funkcionalitás
+---
 
-Token alapú autentikáció (Laravel Sanctum)
+## Fő funkciók
 
-Szerepkörök: user, admin
+- Felhasználói regisztráció és bejelentkezés
+- Token alapú autentikáció (Laravel Sanctum)
+- Jegyek létrehozása, listázása, módosítása, törlése
+- Jegyekhez tartozó válaszok kezelése
+- Szerepkörök: `user`, `admin`
+- Automatikus adatbázis seedelés
+- Feature tesztek
 
-Jegyek kezelése (CRUD)
+---
 
-Jegyekhez tartozó válaszok
+## Technológiai stack
 
-Jogosultságvezérelt hozzáférés
+- PHP 8.1+
+- Laravel 10+
+- Laravel Sanctum
+- MySQL / PostgreSQL
+- PHPUnit
 
-Seederek és automatizált tesztek
+---
 
-Technológiai stack
+## Adatmodell
 
-PHP 8.1+
+### Táblák
 
-Laravel 10+
+users
 
-Laravel Sanctum
+id
 
-MySQL / PostgreSQL
+name
 
-PHPUnit
+email
 
-Könyvtárstruktúra (releváns részek)
-├── app/
-│   ├── Models/
-│   │   ├── User.php
-│   │   ├── Ticket.php
-│   │   └── TicketReply.php
-│   ├── Http/
-│   │   ├── Controllers/
-│   │   │   ├── AuthController.php
-│   │   │   ├── TicketController.php
-│   │   │   └── TicketReplyController.php
-│   │   └── Middleware/
-│   └── Policies/
-│       └── TicketPolicy.php
-│
-├── database/
-│   ├── migrations/
-│   ├── seeders/
-│   │   ├── UserSeeder.php
-│   │   ├── TicketSeeder.php
-│   │   └── TicketReplySeeder.php
-│
-├── routes/
-│   └── api.php
-│
-├── tests/
-│   ├── Feature/
-│   │   ├── AuthTest.php
-│   │   ├── TicketTest.php
-│   │   └── TicketReplyTest.php
-│
-├── .env.example
-├── README.md
-└── composer.json
+role
 
-Telepítés és futtatás
-1. Repository klónozása
+password
+
+created_at
+
+updated_at
+
+tickets
+
+id
+
+user_id
+
+subject
+
+description
+
+priority
+
+status
+
+created_at
+
+updated_at
+
+ticket_replies
+
+id
+
+ticket_id
+
+user_id
+
+message
+
+created_at
+
+yaml
+Kód másolása
+
+### Kapcsolatok
+
+- User → Ticket (1:N)
+- Ticket → TicketReply (1:N)
+- User → TicketReply (1:N)
+
+---
+
+## Telepítés
+
+### Repository klónozása
+
+```bash
 git clone https://github.com/felhasznalo/ticketing-api.git
 cd ticketing-api
-
-2. Függőségek telepítése
+Függőségek telepítése
+bash
+Kód másolása
 composer install
-
-3. Környezeti változók
+Környezeti változók
+bash
+Kód másolása
 cp .env.example .env
 php artisan key:generate
+.env fájlban állítsd be az adatbázist:
 
-
-Állítsd be az adatbázis kapcsolatot a .env fájlban:
-
+env
+Kód másolása
 DB_DATABASE=ticketing
 DB_USERNAME=root
 DB_PASSWORD=
-
-4. Adatbázis migráció és seedelés
+Migráció és seedelés
+bash
+Kód másolása
 php artisan migrate:fresh --seed
-
-5. Szerver indítása
+Szerver indítása
+bash
+Kód másolása
 php artisan serve
-
 Authentikáció
+A védett végpontok Bearer token alapú hitelesítést használnak.
 
-A rendszer Laravel Sanctumot használ.
-Minden védett végpont Authorization: Bearer <token> fejlécet vár.
-
-API végpontok összefoglaló
+css
+Kód másolása
+Authorization: Bearer {token}
+API végpontok
 Auth
-Metódus	Végpont	Leírás
+Method	Endpoint	Leírás
 POST	/api/register	Regisztráció
 POST	/api/login	Bejelentkezés
 POST	/api/logout	Kijelentkezés
+
 User
-Metódus	Végpont	Leírás
+Method	Endpoint	Leírás
 GET	/api/users/me	Saját profil
+
 Tickets
-Metódus	Végpont	Jogosultság
-GET	/api/tickets	user / admin
+Method	Endpoint	Jogosultság
+GET	/api/tickets	user, admin
 POST	/api/tickets	user
-GET	/api/tickets/{id}	user / admin
-PATCH	/api/tickets/{id}	user / admin
+GET	/api/tickets/{id}	user, admin
+PATCH	/api/tickets/{id}	user, admin
 DELETE	/api/tickets/{id}	admin
+
 Ticket replies
-Metódus	Végpont
+Method	Endpoint
 GET	/api/tickets/{id}/replies
 POST	/api/tickets/{id}/replies
-Hibakezelés
-HTTP kód	Jelentés
+
+Hibakódok
+Kód	Jelentés
 400	Hibás kérés
 401	Nem autentikált
 403	Jogosultság megtagadva
 404	Nem található
 422	Validációs hiba
+
 Tesztelés
+bash
+Kód másolása
 php artisan test
-
-
 A tesztek lefedik:
 
 Regisztráció
@@ -135,6 +171,8 @@ Jegy létrehozás
 
 Jegyválasz létrehozás
 
-Admin felhasználó (seed)
+Alap admin felhasználó (seed)
+makefile
+Kód másolása
 Email: admin@example.com
 Jelszó: Admin123
