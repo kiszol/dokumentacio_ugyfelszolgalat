@@ -11,7 +11,6 @@ A backend elsődleges célja egy frontend alkalmazás kiszolgálása, amelyet az
 
 A rendszer role-alapú működést alkalmaz:
 - `user` – ügyfél
-- `agent` – ügyfélszolgálati munkatárs
 - `admin` – adminisztrátor
 
 ---
