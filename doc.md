@@ -26,6 +26,7 @@ Szerepkörök
 admin
 
 student
+---
 
 2. Felhasználó beiratkozása kurzusra
 Funkció leírása
